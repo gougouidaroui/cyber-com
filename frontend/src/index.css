@@ -1,0 +1,72 @@
+:root {
+  /* Cyberpunk Palette */
+  --color-primary: #1E3A5F;
+  --color-on-primary: #FFFFFF;
+  --color-secondary: #334155;
+  --color-accent: #059669;
+  --color-accent-hover: #047857;
+  --color-background: #0F172A;
+  --color-foreground: #FFFFFF;
+  --color-muted: #10192E;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-destructive: #DC2626;
+  --color-ring: #1E3A5F;
+  
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --font-heading: 'Orbitron', system-ui, sans-serif;
+  --font-sans: 'JetBrains Mono', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Background overlay scanline effect */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.4;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  margin-top: 0;
+  letter-spacing: 1px;
+}
+
+code, .counter, pre {
+  font-family: var(--font-mono);
+}
+
+button {
+  font-family: var(--font-mono);
+}
+
+input {
+  font-family: var(--font-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
