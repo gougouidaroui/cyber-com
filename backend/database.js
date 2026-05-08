@@ -20,10 +20,22 @@ const initDB = () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         mh_public_key TEXT NOT NULL,
-        mh_private_key TEXT NOT NULL,
+        mh_private_key_encrypted TEXT NOT NULL,
         eg_public_key TEXT NOT NULL,
-        eg_private_key TEXT NOT NULL,
+        eg_private_key_encrypted TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS session_keys (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        session_token TEXT UNIQUE NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME NOT NULL,
+        is_active INTEGER DEFAULT 1,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )
     `);
@@ -34,7 +46,6 @@ const initDB = () => {
         sender_id INTEGER NOT NULL,
         receiver_id INTEGER NOT NULL,
         ciphertext TEXT NOT NULL,
-        plaintext TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (sender_id) REFERENCES users(id),
         FOREIGN KEY (receiver_id) REFERENCES users(id)

@@ -21,10 +21,14 @@ function authenticateToken(req, res, next) {
 
 function generateToken(user) {
   return jwt.sign(
-    { id: user.id, username: user.username },
+    { id: user.id, username: user.username, sessionToken: user.sessionToken },
     JWT_SECRET,
     { expiresIn: '24h' }
   );
 }
 
-module.exports = { authenticateToken, generateToken, JWT_SECRET };
+function verifyToken(token) {
+  return jwt.verify(token, JWT_SECRET);
+}
+
+module.exports = { authenticateToken, generateToken, verifyToken, JWT_SECRET };

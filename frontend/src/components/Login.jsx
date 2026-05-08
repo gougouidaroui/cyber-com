@@ -20,7 +20,7 @@ export default function Login() {
 
     try {
       const data = await api.auth.login(username, password);
-      login(data.token, data.user);
+      login(data.token, data.user, data.sessionToken, password);
       navigate('/chats');
     } catch (err) {
       setError(err.message);

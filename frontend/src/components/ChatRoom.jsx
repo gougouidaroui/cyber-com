@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/api';
-import { Shield, ArrowLeft, Send, KeyRound, ShieldAlert, Lock, Eye, EyeOff } from 'lucide-react';
+import { encryptMessage, decryptMessage } from '../utils/crypto';
+import { unlockKeys } from '../utils/keyDerivation';
+import { Shield, ArrowLeft, Send, KeyRound, ShieldAlert, Lock, LogOut } from 'lucide-react';
 
 export default function ChatRoom() {
   const { userId } = useParams();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, sessionToken, password, logout } = useAuth();
 
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -14,14 +17,89 @@ export default function ChatRoom() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [partnerName, setPartnerName] = useState('');
-  const [visibleCiphertext, setVisibleCiphertext] = useState({});
+  const [myKeys, setMyKeys] = useState(null);
 
   const messagesEndRef = useRef(null);
+
+  const unlockAndGetKeys = async () => {
+    const activePassword = password || sessionStorage.getItem('password');
+    const activeSessionToken = sessionToken || localStorage.getItem('sessionToken');
+
+    console.log('unlockAndGetKeys:', { hasPassword: !!activePassword, hasSessionToken: !!activeSessionToken, pwd: activePassword?.substring(0,3), tok: activeSessionToken?.substring(0,10) });
+
+    if (!activePassword || !activeSessionToken) {
+      throw new Error('Session expired, please login again');
+    }
+
+    const keysData = await api.keys.getMy();
+    console.log('keysData received:', { hasMH: !!keysData.mhPrivateKeyEncrypted, hasEG: !!keysData.egPrivateKeyEncrypted });
+
+    const mhPrivateKey = await unlockKeys(
+      keysData.mhPrivateKeyEncrypted,
+      activePassword,
+      activeSessionToken
+    );
+
+    const egPrivateKey = await unlockKeys(
+      keysData.egPrivateKeyEncrypted,
+      activePassword,
+      activeSessionToken
+    );
+
+    return {
+      mh: mhPrivateKey,
+      eg: egPrivateKey
+    };
+  };
 
   const fetchMessages = async () => {
     try {
       const data = await api.messages.getWithUser(userId);
-      setMessages(data.messages);
+
+      let keys = myKeys;
+      if (!keys) {
+        try {
+          keys = await unlockAndGetKeys();
+          setMyKeys(keys);
+        } catch (unlockErr) {
+          if (unlockErr.message.includes('Session expired') || unlockErr.message.includes('401')) {
+            await logout();
+            navigate('/');
+            return;
+          }
+          throw unlockErr;
+        }
+      }
+
+      let sentMessages = [];
+      try {
+        sentMessages = JSON.parse(localStorage.getItem('sentMessages')) || [];
+      } catch (e) {
+        sentMessages = [];
+      }
+
+      let sentIndex = 0;
+      const decryptedMessages = data.messages.map((msg) => {
+        if (msg.message === '[ENCRYPTED]' && msg.ciphertext) {
+          const isSent = msg.sender_id === user.id;
+
+          if (isSent && sentIndex < sentMessages.length) {
+            return { ...msg, message: sentMessages[sentIndex++] };
+          }
+
+          if (keys) {
+            try {
+              const decrypted = decryptMessage(msg.ciphertext, keys);
+              return { ...msg, message: decrypted };
+            } catch {
+              return { ...msg, message: '[DECRYPTION FAILED]' };
+            }
+          }
+        }
+        return msg;
+      });
+
+      setMessages(decryptedMessages);
 
       if (!partnerName && data.messages.length > 0) {
         const partnerId = data.messages[0].sender_id === user.id
@@ -32,6 +110,11 @@ export default function ChatRoom() {
         setPartnerName(partner?.username || 'Subject');
       }
     } catch (err) {
+      if (err.message.includes('Session expired') || (err.response && err.response.status === 401)) {
+        await logout();
+        navigate('/');
+        return;
+      }
       setError(err.message);
     } finally {
       setLoading(false);
@@ -39,9 +122,14 @@ export default function ChatRoom() {
   };
 
   useEffect(() => {
+    setMessages([]);
+    setMyKeys(null);
     fetchMessages();
     const interval = setInterval(fetchMessages, 3000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      setMessages([]);
+    };
   }, [userId]);
 
   useEffect(() => {
@@ -56,8 +144,26 @@ export default function ChatRoom() {
     setError('');
 
     try {
-      await api.messages.send(userId, newMessage);
+      const partnerKeys = await api.keys.getForUser(userId);
+      const publicKey = {
+        mh: partnerKeys.mhPublicKey,
+        eg: partnerKeys.egPublicKey
+      };
+
+      const ciphertext = encryptMessage(newMessage, publicKey);
+      await api.messages.send(userId, ciphertext);
+
+      let sentMessages = [];
+      try {
+        sentMessages = JSON.parse(localStorage.getItem('sentMessages')) || [];
+      } catch (e) {
+        sentMessages = [];
+      }
+      sentMessages.push(newMessage);
+      localStorage.setItem('sentMessages', JSON.stringify(sentMessages));
+
       setNewMessage('');
+      setMyKeys(null);
       fetchMessages();
     } catch (err) {
       setError(err.message);
@@ -77,6 +183,9 @@ export default function ChatRoom() {
           <nav>
             <Link to="/keys" className="header-link"><KeyRound size={14} /> KEYS</Link>
             <Link to="/attack" className="header-link"><ShieldAlert size={14} /> ATTACK DEMO</Link>
+            <button onClick={() => { logout(); navigate('/'); }} className="header-link" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-destructive)' }}>
+              <LogOut size={14} /> LOGOUT
+            </button>
           </nav>
         </div>
       </header>
@@ -102,21 +211,6 @@ export default function ChatRoom() {
                   {isSent ? 'TX: USER' : `RX: ${partnerName}`}
                 </span>
                 <div className="message-text">{msg.message}</div>
-                {visibleCiphertext[msg.id] && (
-                  <div className="ciphertext-display">
-                    <span className="ciphertext-label">ATTACKER VIEW (INTERCEPTED):</span>
-                    <code>{msg.ciphertext}</code>
-                  </div>
-                )}
-                <div className="message-actions">
-                  <button
-                    className="ciphertext-btn"
-                    onClick={() => setVisibleCiphertext(prev => ({ ...prev, [msg.id]: !prev[msg.id] }))}
-                  >
-                    {visibleCiphertext[msg.id] ? <EyeOff size={12} /> : <Eye size={12} />}
-                    {visibleCiphertext[msg.id] ? 'HIDE ENCRYPTED' : 'VIEW ATTACKER VIEW'}
-                  </button>
-                </div>
               </div>
               <span className="timestamp">
                 TS: {new Date(msg.created_at).toLocaleTimeString()}

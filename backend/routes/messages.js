@@ -54,7 +54,7 @@ router.get('/:userId', authenticateToken, (req, res) => {
   }
 
   const stmt = db.prepare(`
-    SELECT id, sender_id, receiver_id, ciphertext, plaintext, created_at
+    SELECT id, sender_id, receiver_id, ciphertext, created_at
     FROM messages
     WHERE (sender_id = ? AND receiver_id = ?)
        OR (sender_id = ? AND receiver_id = ?)
@@ -66,61 +66,27 @@ router.get('/:userId', authenticateToken, (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch messages' });
     }
 
-    const getMyKeys = db.prepare(`
-      SELECT mh_private_key, eg_private_key FROM user_keys WHERE user_id = ?
-    `);
-
-    getMyKeys.get(userId, (err, myKeys) => {
-      if (err || !myKeys) {
-        return res.status(500).json({ error: 'Keys not found' });
-      }
-
-      const myMHPriv = JSON.parse(myKeys.mh_private_key);
-      const myEGPriv = JSON.parse(myKeys.eg_private_key);
-
-      const messages = rows.map(row => {
-        let decryptedMessage = '[ENCRYPTED]';
-        const isSent = row.sender_id === userId;
-
-        if (isSent && row.plaintext) {
-          decryptedMessage = row.plaintext;
-        } else if (row.ciphertext) {
-          try {
-            const ciphertextObj = JSON.parse(row.ciphertext);
-            const mhCiphertexts = ciphertextObj.mh;
-            const egCiphertexts = ciphertextObj.eg;
-
-            const mhDecrypted = egCiphertexts.map(egCt => {
-              return egDecrypt(egCt, myEGPriv);
-            });
-
-            decryptedMessage = mhDecrypt(mhDecrypted, myMHPriv);
-          } catch (e) {
-            decryptedMessage = '[DECRYPTION FAILED]';
-          }
-        }
-
-        return {
-          id: row.id,
-          sender_id: row.sender_id,
-          receiver_id: row.receiver_id,
-          ciphertext: row.ciphertext,
-          message: decryptedMessage,
-          created_at: row.created_at
-        };
-      });
-
-res.json({ messages });
-      });
+    const messages = rows.map(row => {
+      return {
+        id: row.id,
+        sender_id: row.sender_id,
+        receiver_id: row.receiver_id,
+        ciphertext: row.ciphertext,
+        message: '[ENCRYPTED]',
+        created_at: row.created_at
+      };
     });
+
+    res.json({ messages });
   });
+});
 
 router.post('/send', authenticateToken, (req, res) => {
   const senderId = req.user.id;
-  const { receiverId, message } = req.body;
+  const { receiverId, ciphertext } = req.body;
 
-  if (!receiverId || !message) {
-    return res.status(400).json({ error: 'Receiver ID and message are required' });
+  if (!receiverId || !ciphertext) {
+    return res.status(400).json({ error: 'Receiver ID and ciphertext are required' });
   }
 
   const receiverIdNum = parseInt(receiverId);
@@ -128,41 +94,16 @@ router.post('/send', authenticateToken, (req, res) => {
     return res.status(400).json({ error: 'Invalid receiver ID' });
   }
 
-  const getKeysStmt = db.prepare(`
-    SELECT mh_public_key, mh_private_key, eg_public_key, eg_private_key
-    FROM user_keys WHERE user_id = ?
+  const insertMsg = db.prepare(`
+    INSERT INTO messages (sender_id, receiver_id, ciphertext) VALUES (?, ?, ?)
   `);
 
-  getKeysStmt.get(receiverIdNum, (err, receiverKeys) => {
-    if (err || !receiverKeys) {
-      return res.status(404).json({ error: 'Receiver not found or has no keys' });
+  insertMsg.run(senderId, receiverIdNum, ciphertext, (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to send message' });
     }
 
-    const receiverMHPub = JSON.parse(receiverKeys.mh_public_key);
-    const receiverEGPub = JSON.parse(receiverKeys.eg_public_key);
-
-    const mhCiphertexts = mhEncrypt(message, receiverMHPub);
-
-    const egCiphertexts = mhCiphertexts.map(ct => {
-      return egEncrypt(BigInt(ct), receiverEGPub);
-    });
-
-    const fullCiphertext = JSON.stringify({
-      mh: mhCiphertexts,
-      eg: egCiphertexts
-    });
-
-    const insertMsg = db.prepare(`
-      INSERT INTO messages (sender_id, receiver_id, ciphertext, plaintext) VALUES (?, ?, ?, ?)
-    `);
-
-    insertMsg.run(senderId, receiverIdNum, fullCiphertext, message, (err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Failed to send message' });
-      }
-
-      res.status(201).json({ message: 'Message sent successfully' });
-    });
+    res.status(201).json({ message: 'Message sent successfully' });
   });
 });
 

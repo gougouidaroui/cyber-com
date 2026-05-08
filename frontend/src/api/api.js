@@ -31,12 +31,14 @@ export const api = {
     login: (username, password) => request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password })
-    })
+    }),
+    logout: () => request('/auth/logout', { method: 'POST' })
   },
 
   keys: {
     getMy: () => request('/keys/my'),
-    getForUser: (userId) => request(`/keys/${userId}`)
+    getForUser: (userId) => request(`/keys/${userId}`),
+    unlock: () => request('/keys/unlock')
   },
 
   users: {
@@ -47,9 +49,9 @@ export const api = {
     getConversations: () => request('/messages/conversations'),
     getWithUser: (userId) => request(`/messages/${userId}`),
     getAllForAttack: () => request('/messages/all/for-attack'),
-    send: (receiverId, message) => request('/messages/send', {
+    send: (receiverId, ciphertext) => request('/messages/send', {
       method: 'POST',
-      body: JSON.stringify({ receiverId, message })
+      body: JSON.stringify({ receiverId, ciphertext })
     }),
     decrypt: (messageId) => request(`/messages/decrypt/${messageId}`)
   },
