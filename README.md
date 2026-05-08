@@ -62,3 +62,20 @@ Le script `crack.js` à la racine est un outil autonome d'attaque LLL sur Merkle
 ```sh
 node crack.js
 ```
+
+### Network Interceptor (network_crack.js)
+
+Capture le trafic HTTP en temps réel via TShark et décode les messages chiffrés à la volée.
+
+```sh
+node network_crack.js
+```
+
+**Windows:** Si l'interface `lo` n'existe pas, utilisez la bonne interface réseau:
+
+```cmd
+:: Trouver le nom de l'interface loopback
+tshark -D
+```
+
+Puis modifiez `-i 'lo'` dans le script (ligne 272) avec le nom de l'interface (ex: `-i 1` pour la première).
