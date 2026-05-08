@@ -66,7 +66,12 @@ node crack.js
 
 ### Network Interceptor (network_crack.js)
 
-Capture le trafic HTTP en temps réel via TShark et décode les messages chiffrés à la volée.
+Ce script utilise **TShark** (interface en ligne de commande de Wireshark) pour capturer le trafic réseau en temps réel et cracker les messages chiffrés à la volée.
+
+**Fonctionnement:**
+1. Lance TShark sur l'interface loopback pour capturer le trafic HTTP sur le port 3000
+2. Extrait les clés publiques Merkle-Hellman lors des requêtes `/api/auth/login` et `/api/auth/register`
+3. Intercepte les messages chiffrés et applique l'attaque LLL pour récupérer le plaintext
 
 ```sh
 node network_crack.js
