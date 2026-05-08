@@ -12,10 +12,9 @@ Application de messagerie chiffrée utilisant **Merkle-Hellman** et **ElGamal** 
 
 ## Stack
 
-- **Frontend:** React 19 + Vite (ESM)
-- **Backend:** Node.js + Express (CommonJS)
-- **DB:** SQLite (auto-initialisée)
-- **Crypto:** implémentation from scratch en JS
+- **Frontend:** React 19.2 + Vite 8 + React Router 7
+- **Backend:** Node.js + Express 5 + SQLite3
+- **Auth:** JWT + bcrypt
 
 ## Démarrage rapide
 
@@ -49,11 +48,13 @@ cd frontend && npm run lint     # ESLint
 
 ## API
 
-- `POST /api/auth/register` — Inscription
-- `POST /api/auth/login` — Connexion (JWT)
-- `GET/POST /api/keys` — Génération de clés
-- `GET/POST /api/messages` — Envoyer/recevoir messages chiffrés
-- `POST /api/attack` — Lancer l'attaque sur un message
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/register` | POST | Inscription |
+| `/api/auth/login` | POST | Connexion (JWT) |
+| `/api/keys` | GET, POST | Générer/récupérer clés |
+| `/api/messages` | GET, POST | Envoyer/recevoir messages |
+| `/api/attack` | POST | Lancer attaque LLL |
 
 ## Attack
 
