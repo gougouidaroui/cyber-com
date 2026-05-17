@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/api';
-import { KeyRound, ShieldAlert, LogOut, Shield, Database, Terminal } from 'lucide-react';
+import { KeyRound, LogOut, Shield, Database, Terminal, Play, Activity } from 'lucide-react';
 
 export default function KeyManager() {
   const [keys, setKeys] = useState(null);
@@ -33,7 +33,8 @@ export default function KeyManager() {
           <span className="header-user">SUBJ: {user?.username}</span>
           <nav>
             <Link to="/chats" className="header-link"><Terminal size={14} /> CHANNELS</Link>
-            <Link to="/attack" className="header-link"><ShieldAlert size={14} /> ATTACK DEMO</Link>
+            <Link to="/playground" className="header-link"><Play size={14} /> PLAYGROUND</Link>
+            <Link to="/compare" className="header-link"><Activity size={14} /> COMPARE</Link>
             <button onClick={() => { logout(); navigate('/'); }} className="secondary">
               <LogOut size={14} /> LOGOUT
             </button>
@@ -60,13 +61,10 @@ export default function KeyManager() {
               </div>
 
               <div className="terminal-block">
-                <h3>PRIVATE KEY (SUPERINCREASING)</h3>
-                <div className="terminal-display">
-                  <p>W (BASE VECTOR):</p>
-                  <code>[{keys.mhPrivateKey.W.join(', ')}]</code>
-                  <p>MODULUS (Q): {keys.mhPrivateKey.q}</p>
-                  <p>MULTIPLIER (R): {keys.mhPrivateKey.r}</p>
-                  <p>INVERSE (R⁻¹): {keys.mhPrivateKey.rInverse}</p>
+                <h3>PRIVATE KEY (ENCRYPTED)</h3>
+                <div className="terminal-display" style={{ borderColor: '#F59E0B' }}>
+                  <p>⚠️ Private key is encrypted in database</p>
+                  <code style={{ color: '#F59E0B' }}>{keys.mhPrivateKeyEncrypted.substring(0, 60)}...</code>
                 </div>
               </div>
             </section>
@@ -86,11 +84,10 @@ export default function KeyManager() {
               </div>
 
               <div className="terminal-block">
-                <h3>PRIVATE PARAMETERS</h3>
-                <div className="terminal-display">
-                  <p>PRIME (P): {keys.egPrivateKey.p.substring(0, 50)}... [TRUNCATED]</p>
-                  <p>GENERATOR (G): {keys.egPrivateKey.g}</p>
-                  <p>PRIVATE (A): {keys.egPrivateKey.a}</p>
+                <h3>PRIVATE KEY (ENCRYPTED)</h3>
+                <div className="terminal-display" style={{ borderColor: '#F59E0B' }}>
+                  <p>⚠️ Private key is encrypted in database</p>
+                  <code style={{ color: '#F59E0B' }}>{keys.egPrivateKeyEncrypted.substring(0, 60)}...</code>
                 </div>
               </div>
             </section>

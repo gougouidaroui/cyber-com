@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/api';
-import { KeyRound, ShieldAlert, LogOut, MessageSquare, Terminal, Users } from 'lucide-react';
+import { KeyRound, LogOut, MessageSquare, Terminal, Users, Play, Activity } from 'lucide-react';
 
 export default function ChatList() {
   const [conversations, setConversations] = useState([]);
@@ -39,7 +39,8 @@ export default function ChatList() {
           <span className="header-user">SUBJ: {user?.username}</span>
           <nav>
             <Link to="/keys" className="header-link"><KeyRound size={14} /> Keys</Link>
-            <Link to="/attack" className="header-link"><ShieldAlert size={14} /> Attack Demo</Link>
+            <Link to="/playground" className="header-link"><Play size={14} /> Playground</Link>
+            <Link to="/compare" className="header-link"><Activity size={14} /> Compare</Link>
             <button onClick={() => { logout(); navigate('/'); }} className="secondary">
               <LogOut size={14} /> LOGOUT
             </button>

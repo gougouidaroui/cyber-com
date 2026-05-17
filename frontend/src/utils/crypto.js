@@ -43,34 +43,6 @@ function generateSuperincreasingSequence(n) {
   return sequence;
 }
 
-function mhGenerateKeyPair(blockSize = 8) {
-  const W = generateSuperincreasingSequence(blockSize);
-  const q = W.reduce((a, b) => a + b, 0) + Math.floor(Math.random() * 100) + 1;
-
-  let r;
-  do {
-    r = Math.floor(Math.random() * (q - 2)) + 2;
-  } while (gcd(r, q) !== 1);
-
-  const rInverse = modInverse(r, q);
-
-  const B = W.map(wi => (r * wi) % q);
-
-  return {
-    publicKey: {
-      B: B,
-      n: blockSize
-    },
-    privateKey: {
-      W: W,
-      q: q,
-      r: r,
-      rInverse: rInverse,
-      n: blockSize
-    }
-  };
-}
-
 function messageToBlocks(message, blockSize) {
   const binaryString = [];
   for (let i = 0; i < message.length; i++) {
@@ -127,7 +99,7 @@ function mhEncrypt(message, publicKey) {
 }
 
 function mhDecrypt(ciphertexts, privateKey) {
-  const { W, q, rInverse, n } = privateKey;
+  const { W, q, rInverse } = privateKey;
 
   const blocks = ciphertexts.map(ciphertext => {
     const c = BigInt(ciphertext);
@@ -149,40 +121,6 @@ function mhDecrypt(ciphertexts, privateKey) {
   });
 
   return blocksToMessage(blocks);
-}
-
-function isProbablePrime(n, iterations = 5) {
-  const nBig = BigInt(n);
-  if (nBig < 2n) return false;
-  if (nBig === 2n || nBig === 3n) return true;
-  if (nBig % 2n === 0n) return false;
-
-  let s = nBig - 1n;
-  let t = 0;
-  while (s % 2n === 0n) {
-    s /= 2n;
-    t++;
-  }
-
-  for (let i = 0; i < iterations; i++) {
-    const a = BigInt(Math.floor(Math.random() * (n - 4)) + 2);
-    let x = modPow(a, s, nBig);
-
-    if (x === 1n || x === nBig - 1n) continue;
-
-    let isComposite = true;
-    for (let j = 0; j < t - 1; j++) {
-      x = (x * x) % nBig;
-      if (x === nBig - 1n) {
-        isComposite = false;
-        break;
-      }
-    }
-
-    if (isComposite) return false;
-  }
-
-  return true;
 }
 
 function modPow(base, exponent, mod) {
@@ -267,7 +205,6 @@ export function encryptMessage(message, receiverPublicKey) {
 
 export function decryptMessage(ciphertext, privateKey) {
   const ciphertextObj = JSON.parse(ciphertext);
-  const mhCiphertexts = ciphertextObj.mh;
   const egCiphertexts = ciphertextObj.eg;
 
   const mhDecrypted = egCiphertexts.map(egCt => {

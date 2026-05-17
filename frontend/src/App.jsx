@@ -5,7 +5,8 @@ import Register from './components/Register';
 import ChatList from './components/ChatList';
 import ChatRoom from './components/ChatRoom';
 import KeyManager from './components/KeyManager';
-import AttackDemo from './components/AttackDemo';
+import CryptoPlayground from './components/CryptoPlayground';
+import Compare from './components/Compare';
 import './App.css';
 
 function ProtectedRoute({ children }) {
@@ -58,10 +59,18 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/attack"
+        path="/playground"
         element={
           <ProtectedRoute>
-            <AttackDemo />
+            <CryptoPlayground />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/compare"
+        element={
+          <ProtectedRoute>
+            <Compare />
           </ProtectedRoute>
         }
       />

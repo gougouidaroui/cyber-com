@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../api/api';
 import { encryptMessage, decryptMessage } from '../utils/crypto';
 import { unlockKeys } from '../utils/keyDerivation';
-import { Shield, ArrowLeft, Send, KeyRound, ShieldAlert, Lock, LogOut } from 'lucide-react';
+import { Shield, ArrowLeft, Send, KeyRound, Terminal, Lock, LogOut, Activity } from 'lucide-react';
 
 export default function ChatRoom() {
   const { userId } = useParams();
@@ -182,7 +182,8 @@ export default function ChatRoom() {
         <div className="header-actions">
           <nav>
             <Link to="/keys" className="header-link"><KeyRound size={14} /> KEYS</Link>
-            <Link to="/attack" className="header-link"><ShieldAlert size={14} /> ATTACK DEMO</Link>
+            <Link to="/playground" className="header-link"><Terminal size={14} /> PLAYGROUND</Link>
+            <Link to="/compare" className="header-link"><Activity size={14} /> COMPARE</Link>
             <button onClick={() => { logout(); navigate('/'); }} className="header-link" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-destructive)' }}>
               <LogOut size={14} /> LOGOUT
             </button>

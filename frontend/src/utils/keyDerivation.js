@@ -1,9 +1,3 @@
-function deriveKey(password, sessionToken, timestamp) {
-  const combinedInput = `${password}${sessionToken}${timestamp}`;
-  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(combinedInput))
-    .then(buffer => new Uint8Array(buffer));
-}
-
 async function decryptPrivateKey(encryptedData, password, sessionToken) {
   console.log('decryptPrivateKey called');
   const parsed = JSON.parse(encryptedData);

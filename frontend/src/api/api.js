@@ -48,24 +48,10 @@ export const api = {
   messages: {
     getConversations: () => request('/messages/conversations'),
     getWithUser: (userId) => request(`/messages/${userId}`),
-    getAllForAttack: () => request('/messages/all/for-attack'),
     send: (receiverId, ciphertext) => request('/messages/send', {
       method: 'POST',
       body: JSON.stringify({ receiverId, ciphertext })
     }),
     decrypt: (messageId) => request(`/messages/decrypt/${messageId}`)
-  },
-
-  attack: {
-    getIntercepted: () => request('/attack/intercepted'),
-    intercept: (fromUserId, toUserId, message) => request('/attack/intercept', {
-      method: 'POST',
-      body: JSON.stringify({ fromUserId, toUserId, message })
-    }),
-    run: (mhPublicKey, ciphertext, messageId) => request('/attack/run', {
-      method: 'POST',
-      body: JSON.stringify({ mhPublicKey, ciphertext, messageId })
-    }),
-    getDemoData: () => request('/attack/demo-data')
   }
 };
